@@ -295,7 +295,7 @@ public class FileCompresserBenchmark {
         }
         String SettingsFileName="settingsCPU.txt";
         String DatabaseFileName="databaseCPU.csv";
-        String SecondaryDatabaseFileName="databaseCPSecondary.csv";
+        String SecondaryDatabaseFileName="databaseCPUSecondary.csv";
         int numberOfTests=6;
         long scoresSum=0;
         long maxScore=0;
