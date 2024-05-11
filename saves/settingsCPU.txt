@@ -1,0 +1,2 @@
+addResultsToDatabase=True
+numberOfRuns=2

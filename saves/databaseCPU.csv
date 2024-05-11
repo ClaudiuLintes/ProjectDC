@@ -1,0 +1,5 @@
+Operating System,CPU Manufacturer,CPU Model,Number Of Threads,Number of runs,Single-Thread Score,Multi-Thread Score,Date
+Windows 11,AMD,Ryzen 5 7600 6-Core Processor,12,20,15628,172101,03/05/2024
+Windows 11,AMD,Ryzen 7 5800H with Radeon Graphics,16,20,8488,112658,03/05/2024
+Windows 11,AMD,Ryzen 7 2700X Eight-Core Processor,16,20,4551,58916,03/05/2024
+Windows 10,Intel(R),Core(TM) i3-3217U CPU @ 1.80GHz,4,20,3634,13817,03/05/2024
