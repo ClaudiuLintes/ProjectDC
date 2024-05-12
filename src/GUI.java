@@ -25,7 +25,7 @@ public class GUI extends JFrame {
         // Load background image
         BufferedImage backgroundImage = null;
         try {
-            backgroundImage = ImageIO.read(new File("gumball.png"));
+            backgroundImage = ImageIO.read(new File("background1.jpg"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -39,23 +39,24 @@ public class GUI extends JFrame {
 
         // Set button properties
         Font buttonFont = new Font("Arial", Font.BOLD, 25);
-        Color buttonColor = new Color(215, 182, 193); // Light pink
+        Color buttonColor = new Color(50, 50, 50); // Light pink
+        Color textColor=new Color(255,255,255);
         Dimension buttonSize = new Dimension(200, 350);
 
-        benchmarkButton = createStyledButton("Benchmark", buttonFont, buttonColor, buttonSize);
-        benchmarkCPUButton = createStyledButton("Benchmark CPU", buttonFont, buttonColor, buttonSize);
-        benchmarkRAMButton = createStyledButton("Benchmark RAM", buttonFont, buttonColor, buttonSize);
+        benchmarkButton = createStyledButton("Benchmark", buttonFont, buttonColor, buttonSize,textColor);
+        benchmarkCPUButton = createStyledButton("Benchmark CPU", buttonFont, buttonColor, buttonSize,textColor);
+        benchmarkRAMButton = createStyledButton("Benchmark RAM", buttonFont, buttonColor, buttonSize,textColor);
         benchmarkCPUButton.setVisible(false);
         benchmarkRAMButton.setVisible(false);
 
-        stressTestButton = createStyledButton("Stress Test", buttonFont, buttonColor, buttonSize);
-        stressCPUButton = createStyledButton("Stress CPU", buttonFont, buttonColor, buttonSize);
-        stressRAMButton = createStyledButton("Stress RAM", buttonFont, buttonColor, buttonSize);
+        stressTestButton = createStyledButton("Stress Test", buttonFont, buttonColor, buttonSize,textColor);
+        stressCPUButton = createStyledButton("Stress CPU", buttonFont, buttonColor, buttonSize,textColor);
+        stressRAMButton = createStyledButton("Stress RAM", buttonFont, buttonColor, buttonSize,textColor);
         stressCPUButton.setVisible(false);
         stressRAMButton.setVisible(false);
 
-        settingsButton = createStyledButton("  Settings   ", buttonFont, buttonColor, buttonSize);
-        aboutButton = createStyledButton("   About      ", buttonFont, buttonColor, buttonSize);
+        settingsButton = createStyledButton("  Settings   ", buttonFont, buttonColor, buttonSize,textColor);
+        aboutButton = createStyledButton("   About      ", buttonFont, buttonColor, buttonSize,textColor);
         aboutButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -86,9 +87,10 @@ public class GUI extends JFrame {
         setVisible(true);
     }
 
-    private JButton createStyledButton(String text, Font font, Color color, Dimension size) {
+    private JButton createStyledButton(String text, Font font, Color color, Dimension size,Color textColor) {
         JButton button = new JButton(text);
         button.setFont(font);
+        button.setForeground(textColor);
         button.setBackground(color);
         button.setPreferredSize(size);
         button.setAlignmentX(Component.LEFT_ALIGNMENT);
