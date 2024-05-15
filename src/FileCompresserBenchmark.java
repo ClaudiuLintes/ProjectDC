@@ -38,6 +38,12 @@ public class FileCompresserBenchmark {
 
     private static final int mainAlphabetSize = 256; //alphabet size of extended ASCII
 
+    private static boolean runStress;
+
+    public FileCompresserBenchmark(boolean runStress){
+        FileCompresserBenchmark.runStress=runStress;
+    }
+
     static class MainTask implements Runnable{
         protected int id;
         protected int numberOfTests;
@@ -324,9 +330,6 @@ public class FileCompresserBenchmark {
     }
 
     public static void main(String []args){
-        if(args.length==1&&args[0].equals("stop")){
-            stopBenchmark();
-        }
         String SettingsFileName="settingsCPU.txt";
         String DatabaseFileName="databaseCPU.csv";
         String SecondaryDatabaseFileName="databaseCPUSecondary.csv";
@@ -350,7 +353,7 @@ public class FileCompresserBenchmark {
             while(runs!=0) {
                 ExecutorService executor= Executors.newFixedThreadPool(numberOfThreads);
                 for (int i = 0; i < numberOfThreads; i++) {
-                    if (args.length == 1 && args[0].equals("stress")) {
+                    if (runStress) {
                         settings.numberOfRuns = -1;
                         settings.addResultsToDatabase = false;
                         settings.writeEveryRun = false;
@@ -372,10 +375,7 @@ public class FileCompresserBenchmark {
                 if(settings.writeEveryRun){
                     addToDatabase(SecondaryDatabaseFileName,currentSpecs,settings.numberOfRuns,maxScore,scoresSum);
                 }
-                progressPercentage=((double)(settings.numberOfRuns-runs+1)/settings.numberOfRuns)*100;
-                updateProgressBar(progressPercentage);
-                formattedProgress=String.format("%.2f",progressPercentage);
-                System.out.println("Progress: "+formattedProgress+"%");
+                progressPercentage=((double)(settings.numberOfRuns-runs+1)/settings.numberOfRuns);
                 runs--;
                 SingleFinalScoreSum=maxScore+SingleFinalScoreSum;
                 MultiFinalScoreSum=scoresSum+MultiFinalScoreSum;
