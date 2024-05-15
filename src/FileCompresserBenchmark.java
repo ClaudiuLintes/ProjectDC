@@ -26,6 +26,14 @@ class Specs{
         this.numberOfThreads=numberOfThreads;
     }
 }
+class Results{
+    long singleThreadScore;
+    long multiThreadScore;
+    public Results(long singleThreadScore,long multiThreadScore){
+        this.singleThreadScore=singleThreadScore;
+        this.multiThreadScore=multiThreadScore;
+    }
+}
 public class FileCompresserBenchmark {
 
     private static final int mainAlphabetSize = 256; //alphabet size of extended ASCII
@@ -34,12 +42,24 @@ public class FileCompresserBenchmark {
         protected int id;
         protected int numberOfTests;
 
+        protected int numberOfRuns;
+
         protected double currentProgress;
         protected long finalTaskScore=0;
-        public MainTask(int id,int numberOfTests,double currentProgress){
+        public MainTask(int id,int numberOfTests,double currentProgress,int numberOfRuns){
             this.id=id;
             this.numberOfTests=numberOfTests;
             this.currentProgress=currentProgress;
+            this.numberOfRuns=numberOfRuns;
+        }
+
+        private void incrementProgress(){
+            if(id==0) {
+                currentProgress = currentProgress + (double) 1 / (numberOfRuns * numberOfTests);
+                String formattedProgress = String.format("%.2f", currentProgress * 100);
+                updateProgressBar(currentProgress);
+                System.out.println("Progress: " + formattedProgress + "%");
+            }
         }
         @Override
         public void run(){
@@ -58,25 +78,31 @@ public class FileCompresserBenchmark {
             compress("test1.txt","test1compressed.txt"); //1 KB
             decompress("test1compressed.txt","test1decompressed.txt");
             time[i]=System.nanoTime();
+            incrementProgress();
             i++;
             compress("test2.txt","test2compressed.txt"); //10 KB
             decompress("test2compressed.txt","test2decompressed.txt");
             time[i]=System.nanoTime();
+            incrementProgress();
             i++;
             compress("test3.txt","test3compressed.txt"); //100 KB
             decompress("test3compressed.txt","test3decompressed.txt");
             time[i]=System.nanoTime();
+            incrementProgress();
             i++;
             compress("test4.txt","test4compressed.txt"); //1 MB
             decompress("test4compressed.txt","test4decompressed.txt");
             time[i]=System.nanoTime();
+            incrementProgress();
             i++;
             compress("test5.txt","test5compressed.txt"); //5 MB
             decompress("test5compressed.txt","test5decompressed.txt");
             time[i]=System.nanoTime();
+            incrementProgress();
             i++;
             compress("test6.txt","test6compressed.txt"); //5 MB (RandomFile)
             decompress("test6compressed.txt","test6decompressed.txt");
+            incrementProgress();
             time[i]=System.nanoTime();
             finish[0]=(time[0]-start)/Math.pow(10,timeUnit);
             for(i=1;i<numberOfTests;i++){
@@ -289,6 +315,14 @@ public class FileCompresserBenchmark {
         System.exit(0);
     }
 
+    private static void updateResults(Results results){
+        //updateResults
+    }
+
+    private static void updateProgressBar(double progress){
+        //update the progress bar
+    }
+
     public static void main(String []args){
         if(args.length==1&&args[0].equals("stop")){
             stopBenchmark();
@@ -319,8 +353,9 @@ public class FileCompresserBenchmark {
                     if (args.length == 1 && args[0].equals("stress")) {
                         settings.numberOfRuns = -1;
                         settings.addResultsToDatabase = false;
+                        settings.writeEveryRun = false;
                     }
-                    tasksArray[i] = new MainTask(i, numberOfTests,progressPercentage);
+                    tasksArray[i] = new MainTask(i, numberOfTests,progressPercentage,settings.numberOfRuns);
                     executor.submit(tasksArray[i]);
                 }
                 executor.shutdown();
@@ -338,6 +373,7 @@ public class FileCompresserBenchmark {
                     addToDatabase(SecondaryDatabaseFileName,currentSpecs,settings.numberOfRuns,maxScore,scoresSum);
                 }
                 progressPercentage=((double)(settings.numberOfRuns-runs+1)/settings.numberOfRuns)*100;
+                updateProgressBar(progressPercentage);
                 formattedProgress=String.format("%.2f",progressPercentage);
                 System.out.println("Progress: "+formattedProgress+"%");
                 runs--;
@@ -347,6 +383,8 @@ public class FileCompresserBenchmark {
             //SingleFinalScore=(scoresSum/numberOfThreads)/settings.numberOfRuns; //average thread
             SingleFinalScore = SingleFinalScoreSum/settings.numberOfRuns; //best thread
             MultiFinalScore = scoresSum/settings.numberOfRuns;
+            Results benchmarkResults=new Results(SingleFinalScore,MultiFinalScore);
+            updateResults(benchmarkResults);
             System.out.println("Single-Thread Score: "+SingleFinalScore+" | Multi-Thread Score:"+MultiFinalScore);
             if(settings.addResultsToDatabase){
                 addToDatabase(DatabaseFileName,currentSpecs,settings.numberOfRuns,SingleFinalScore,MultiFinalScore);
