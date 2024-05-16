@@ -330,6 +330,10 @@ public class FileCompresserBenchmark {
     }
 
     public static void main(String []args){
+        if (args.length>0 && Objects.equals(args[0], "-stress")) {
+            runStress = true;
+            System.out.println("Running in stress mode.");
+        }
         String SettingsFileName="settingsCPU.txt";
         String DatabaseFileName="databaseCPU.csv";
         String SecondaryDatabaseFileName="databaseCPUSecondary.csv";

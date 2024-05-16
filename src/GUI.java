@@ -21,6 +21,8 @@ public class GUI extends JFrame {
     private JPanel step2Panel;
     private JPanel buttonPanel;
     private JLabel timerLabel;
+    private JProgressBar progressBar;
+    private Process processCPUstress;
     private Timer timer;
     private int elapsedTime;
 
@@ -118,7 +120,14 @@ public class GUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showStep2();
+                // Start FileCompresserBenchmark in stress mode
+                try {
+                    startCPUstress();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
                 startTimer();
+                startProgressBar(); // Start progress bar
             }
         });
 
@@ -128,6 +137,7 @@ public class GUI extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 showStep2();
                 startTimer();
+                startProgressBar(); // Start progress bar
             }
         });
 
@@ -162,6 +172,7 @@ public class GUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 stopTimer();
+                stopProgressBar(); // Stop progress bar
                 showStep1();
             }
         });
@@ -170,8 +181,16 @@ public class GUI extends JFrame {
         timerLabel.setFont(new Font("Arial", Font.BOLD, 30));
         timerLabel.setForeground(Color.WHITE);
         timerLabel.setHorizontalAlignment(SwingConstants.CENTER); // Center the text horizontally
+
+        // Initialize progress bar
+        progressBar = new JProgressBar();
+        progressBar.setIndeterminate(true);
+        progressBar.setVisible(false); // Disable progress bar by default
+
         step2Panel.add(timerLabel);
-        step2Panel.add(Box.createVerticalStrut(470)); // Add spacing
+        step2Panel.add(Box.createVerticalStrut(20)); // Add spacing between timer and progress bar
+        step2Panel.add(progressBar); // Add the progress bar
+        step2Panel.add(Box.createVerticalStrut(430)); // Add spacing
         step2Panel.add(goBackMainMenuButton);
     }
 
@@ -199,6 +218,7 @@ public class GUI extends JFrame {
     }
 
     private void startTimer() {
+        timerLabel.setText("00:00"); // Set the timer text to 0 to display the correct time during the first second
         elapsedTime = 0;
         timer = new Timer(1000, new ActionListener() {
             @Override
@@ -222,8 +242,32 @@ public class GUI extends JFrame {
         timerLabel.setText(String.format("%02d:%02d", minutes, seconds));
     }
 
+    private void startProgressBar() {
+        progressBar.setVisible(true);
+    }
+
+    private void stopProgressBar() {
+        progressBar.setVisible(false);
+    }
+
+    private void startCPUstress() throws IOException {
+        // Start as a process so it can be easily stop
+        ProcessBuilder processBuilder = new ProcessBuilder("java", "-cp", "./out/production/FileCompresserBenchmark", "FileCompresserBenchmark", "-stress");
+        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        processCPUstress = processBuilder.start();
+    }
+
+    private void stopCPUstress() {
+        if (processCPUstress!=null) {
+            processCPUstress.destroy();
+        }
+    }
+
     private void showMainMenu() {
         stopTimer();
+        stopCPUstress();
+        stopProgressBar(); // Stop progress bar if active
         remove(step1Panel);
         remove(step2Panel);
         add(mainMenuPanel, BorderLayout.WEST);
@@ -233,6 +277,8 @@ public class GUI extends JFrame {
 
     private void showStep1() {
         stopTimer();
+        stopCPUstress();
+        stopProgressBar();
         remove(mainMenuPanel);
         remove(step2Panel);
         add(step1Panel, BorderLayout.WEST);
