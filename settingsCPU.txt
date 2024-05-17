@@ -1,3 +1,4 @@
 addResultsToDatabase=True
-numberOfRuns=2
-addResultsEveryRunToSecondaryDatabase=True
+numberOfRuns=5
+writeEveryRunToSecondaryDatabase=True
+fillTheCacheBeforeTest=True
