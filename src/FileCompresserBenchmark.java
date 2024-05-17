@@ -1,3 +1,4 @@
+import javax.swing.text.StyledEditorKit;
 import java.io.*;
 import java.util.*;
 import java.time.LocalDate;
@@ -11,6 +12,8 @@ class BenchmarkSettings{
     protected int numberOfRuns;
 
     protected boolean writeEveryRun;
+
+    protected boolean fillCacheFirst;
 
 }
 
@@ -37,6 +40,8 @@ class Results{
 public class FileCompresserBenchmark {
 
     private static final int mainAlphabetSize = 256; //alphabet size of extended ASCII
+
+    private static final int numberOfRunsToFillCache = 5; //2-3 runs needed to fill the cache from what i've tested
 
     private static boolean runStress;
 
@@ -221,6 +226,7 @@ public class FileCompresserBenchmark {
         results.addResultsToDatabase=Boolean.parseBoolean(values.getFirst());
         results.numberOfRuns = Integer.parseInt(values.get(1));
         results.writeEveryRun = Boolean.parseBoolean(values.get(2));
+        results.fillCacheFirst = Boolean.parseBoolean(values.get(3));
         return results;
     }
 
@@ -316,11 +322,6 @@ public class FileCompresserBenchmark {
         System.out.print("\n");
     }
 
-    private static void stopBenchmark(){
-        System.out.println("Stopping Benchmark...");
-        System.exit(0);
-    }
-
     private static void updateResults(Results results){
         //updateResults
     }
@@ -341,7 +342,7 @@ public class FileCompresserBenchmark {
         long scoresSum=0;
         long maxScore=0;
         long SingleFinalScoreSum=0;
-        long MultiFinalScoreSum=0;
+        long MultiFinalScoreAbs=0;
         long SingleFinalScore=-1;
         long MultiFinalScore=-1;
         int numberOfThreads=Runtime.getRuntime().availableProcessors();
@@ -351,6 +352,12 @@ public class FileCompresserBenchmark {
         try {
             BenchmarkSettings settings = readSettings(SettingsFileName);
             int runs= settings.numberOfRuns;
+            int progressCacheRuns=0;
+            if(settings.fillCacheFirst){
+                runs=runs+numberOfRunsToFillCache;
+                progressCacheRuns=numberOfRunsToFillCache;
+            }
+            System.out.println("number of runs: "+runs);
             double progressPercentage=0;
             String formattedProgress=String.format("%.2f",progressPercentage);
             System.out.println("Progress: "+formattedProgress+"%");
@@ -361,28 +368,30 @@ public class FileCompresserBenchmark {
                         settings.numberOfRuns = -1;
                         settings.addResultsToDatabase = false;
                         settings.writeEveryRun = false;
+                        settings.fillCacheFirst = false;
                     }
-                    tasksArray[i] = new MainTask(i, numberOfTests,progressPercentage,settings.numberOfRuns);
+                    tasksArray[i] = new MainTask(i, numberOfTests,progressPercentage,settings.numberOfRuns+progressCacheRuns);
                     executor.submit(tasksArray[i]);
                 }
                 executor.shutdown();
                 if (!executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
                     System.out.println("[Task Closed]: -took too long to execute");
                 }
-                ;
-                for (int i = 0; i < numberOfThreads; i++) {
-                    if (maxScore < tasksArray[i].finalTaskScore) {
-                        maxScore = tasksArray[i].finalTaskScore;
+                if(!(settings.fillCacheFirst&&runs>settings.numberOfRuns)) { //we only keep score after filling the cache
+                    for (int i = 0; i < numberOfThreads; i++) {
+                        if (maxScore < tasksArray[i].finalTaskScore) {
+                            maxScore = tasksArray[i].finalTaskScore;
+                        }
+                        scoresSum = tasksArray[i].finalTaskScore + scoresSum;
                     }
-                    scoresSum = tasksArray[i].finalTaskScore + scoresSum;
+                    SingleFinalScoreSum=maxScore+SingleFinalScoreSum;
+                    MultiFinalScoreAbs=Math.abs(MultiFinalScoreAbs-scoresSum); //multi thread score for each run
+                    if (settings.writeEveryRun) {
+                        addToDatabase(SecondaryDatabaseFileName, currentSpecs, settings.numberOfRuns, maxScore, MultiFinalScoreAbs);
+                    }
                 }
-                if(settings.writeEveryRun){
-                    addToDatabase(SecondaryDatabaseFileName,currentSpecs,settings.numberOfRuns,maxScore,scoresSum);
-                }
-                progressPercentage=((double)(settings.numberOfRuns-runs+1)/settings.numberOfRuns);
+                progressPercentage=tasksArray[0].currentProgress;
                 runs--;
-                SingleFinalScoreSum=maxScore+SingleFinalScoreSum;
-                MultiFinalScoreSum=scoresSum+MultiFinalScoreSum;
             }
             //SingleFinalScore=(scoresSum/numberOfThreads)/settings.numberOfRuns; //average thread
             SingleFinalScore = SingleFinalScoreSum/settings.numberOfRuns; //best thread
