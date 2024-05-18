@@ -255,7 +255,7 @@ public class GUI extends JFrame {
         Font buttonFont = new Font("Arial", Font.BOLD, 25);
         Color buttonColor = new Color(50, 50, 50); // Gray
         Color textColor = new Color(255, 255, 255);
-        Dimension buttonSize = new Dimension(750, 350);
+        Dimension buttonSize = new Dimension(750, 300);
 
         benchmarkCPUButton = createStyledButton("Benchmark CPU", buttonFont, buttonColor, buttonSize, textColor);
         benchmarkCPUButton.addActionListener(new ActionListener() {
@@ -308,7 +308,7 @@ public class GUI extends JFrame {
         /*step1PanelBenchmark.add(benchmarkCPU2Button);
         step1PanelBenchmark.add(Box.createVerticalStrut(20)); // Add spacing*/
         step1PanelBenchmark.add(benchmarkRAMButton);
-        step1PanelBenchmark.add(Box.createVerticalStrut(360)); // Add spacing
+        step1PanelBenchmark.add(Box.createVerticalStrut(380)); // Add spacing
         step1PanelBenchmark.add(goBackStep1Button);
     }
     private void initializeStep2PanelBenchmark() {
@@ -334,7 +334,7 @@ public class GUI extends JFrame {
         progressBar.setStringPainted(true);
         progressBar.setVisible(false); // Disable progress bar by default
         step2PanelBenchmark.add(progressBar); // Add the progress bar
-        step2PanelBenchmark.add(Box.createVerticalStrut(440)); // Add spacing
+        step2PanelBenchmark.add(Box.createVerticalStrut(450)); // Add spacing
         step2PanelBenchmark.add(goBackStep1Button);
     }
 
@@ -346,7 +346,7 @@ public class GUI extends JFrame {
         Font buttonFont = new Font("Arial", Font.BOLD, 25);
         Color buttonColor = new Color(50, 50, 50); // Gray
         Color textColor = new Color(255, 255, 255);
-        Dimension buttonSize = new Dimension(100, 50);
+        Dimension buttonSize = new Dimension(750, 50);
         loadSettings(buttonFont,textColor,buttonColor);
 
         goBackMainMenuButton = createStyledButton("Go Back", buttonFont, buttonColor, buttonSize, textColor);
