@@ -1,3 +1,4 @@
+import javax.swing.*;
 import javax.swing.text.StyledEditorKit;
 import java.io.*;
 import java.util.*;
@@ -45,6 +46,10 @@ public class FileCompresserBenchmark {
 
     private static boolean runStress;
 
+    private static boolean runBenchmark1;
+
+    private static boolean runBenchmark2;
+
     public FileCompresserBenchmark(boolean runStress){
         FileCompresserBenchmark.runStress=runStress;
     }
@@ -67,9 +72,9 @@ public class FileCompresserBenchmark {
         private void incrementProgress(){
             if(id==0) {
                 currentProgress = currentProgress + (double) 1 / (numberOfRuns * numberOfTests);
-                String formattedProgress = String.format("%.2f", currentProgress * 100);
-                updateProgressBar(currentProgress);
-                System.out.println("Progress: " + formattedProgress + "%");
+                /*String formattedProgress = String.format("%.2f", currentProgress * 100);
+                System.out.println("Progress: " + formattedProgress + "%");*/
+                System.out.println((int)(currentProgress*100));
             }
         }
         @Override
@@ -322,20 +327,22 @@ public class FileCompresserBenchmark {
         System.out.print("\n");
     }
 
-    private static void updateResults(Results results){
-        //updateResults
-    }
-
-    private static void updateProgressBar(double progress){
-        //update the progress bar
-    }
-
     public static void main(String []args){
-        if (args.length>0 && Objects.equals(args[0], "-stress")) {
-            runStress = true;
-            System.out.println("Running in stress mode.");
+        if(args.length>0){
+            if (Objects.equals(args[0], "-stress")) {
+                runStress = true;
+                System.out.println("Running in stress mode.");
+            }
+            else if (Objects.equals(args[0], "-benchmark1")) {
+                runBenchmark1 = true;
+                System.out.println("Running benchmark1 mode.");
+            }
+            else if (Objects.equals(args[0], "-benchmark2")) {
+                runBenchmark2 = true;
+                System.out.println("Running benchmark2 mode.");
+            }
         }
-        String SettingsFileName="settingsCPU.txt";
+        String SettingsFileName="settings.txt";
         String DatabaseFileName="databaseCPU.csv";
         String SecondaryDatabaseFileName="databaseCPUSecondary.csv";
         int numberOfTests=6;
@@ -359,8 +366,9 @@ public class FileCompresserBenchmark {
             }
             System.out.println("number of runs: "+runs);
             double progressPercentage=0;
-            String formattedProgress=String.format("%.2f",progressPercentage);
-            System.out.println("Progress: "+formattedProgress+"%");
+            /*String formattedProgress=String.format("%.2f",progressPercentage);
+            System.out.println("Progress: "+formattedProgress+"%");*/
+            System.out.println(0);
             while(runs!=0) {
                 ExecutorService executor= Executors.newFixedThreadPool(numberOfThreads);
                 for (int i = 0; i < numberOfThreads; i++) {
@@ -397,8 +405,8 @@ public class FileCompresserBenchmark {
             SingleFinalScore = SingleFinalScoreSum/settings.numberOfRuns; //best thread
             MultiFinalScore = scoresSum/settings.numberOfRuns;
             Results benchmarkResults=new Results(SingleFinalScore,MultiFinalScore);
-            updateResults(benchmarkResults);
-            System.out.println("Single-Thread Score: "+SingleFinalScore+" | Multi-Thread Score:"+MultiFinalScore);
+            System.out.println(SingleFinalScore+","+MultiFinalScore);
+            //System.out.println("Single-Thread Score: "+SingleFinalScore+" | Multi-Thread Score:"+MultiFinalScore);
             if(settings.addResultsToDatabase){
                 addToDatabase(DatabaseFileName,currentSpecs,settings.numberOfRuns,SingleFinalScore,MultiFinalScore);
             }
