@@ -186,8 +186,15 @@ public class GUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showStepStress2();
+                try {
+                    startRAMStressTest(); // Call method to start RAM stress test
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
                 startTimer();
             }
+
+
         });
 
         stressYourselfButton = createStyledButton("Stress Yourself",buttonFont,buttonColor,buttonSize,textColor);
@@ -290,6 +297,11 @@ public class GUI extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showStepBenchmark2();
+                try {
+                    startRAMStressTest(); // Call method to start RAM stress test
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                }
                 startProgressBar(); // Start progress bar
             }
         });
@@ -442,7 +454,7 @@ public class GUI extends JFrame {
             } else if (currentComponent instanceof JCheckBox) {
                 value=String.valueOf(((JCheckBox) currentComponent).isSelected());
             }
-                values.set(i, value);
+            values.set(i, value);
         }
     }
     private void saveSettings(){
@@ -590,6 +602,10 @@ public class GUI extends JFrame {
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         processCPUstress = processBuilder.start();
+    }
+    private void startRAMStressTest() throws IOException {
+        RAMStressTest stressTest = new RAMStressTest(60000); // Create an instance of RAMStressTest
+        stressTest.run(); // Call the method to start the RAM stress test
     }
 
     private void stopAllProcesses() {
