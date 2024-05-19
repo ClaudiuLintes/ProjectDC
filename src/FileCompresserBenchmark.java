@@ -505,6 +505,7 @@ public class FileCompresserBenchmark {
         if(args.length>0){
             if (Objects.equals(args[0], "-stress")) {
                 runStress = true;
+                runBenchmark1 = true;
                 System.out.println("Running in stress mode.");
             }
             else if (Objects.equals(args[0], "-benchmark1")) {
