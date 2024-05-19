@@ -264,7 +264,7 @@ public class GUI extends JFrame {
         Color textColor = new Color(255, 255, 255);
         Dimension buttonSize = new Dimension(750, 300);
 
-        benchmarkCPUButton = createStyledButton("Benchmark CPU", buttonFont, buttonColor, buttonSize, textColor);
+        benchmarkCPUButton = createStyledButton("Benchmark CPU 1", buttonFont, buttonColor, buttonSize, textColor);
         benchmarkCPUButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -278,7 +278,7 @@ public class GUI extends JFrame {
             }
         });
 
-        /*benchmarkCPU2Button = createStyledButton("Benchmark CPU 2", buttonFont, buttonColor, buttonSize, textColor);
+        benchmarkCPU2Button = createStyledButton("Benchmark CPU 2", buttonFont, buttonColor, buttonSize, textColor);
         benchmarkCPU2Button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -290,7 +290,7 @@ public class GUI extends JFrame {
                 }
                 startProgressBar(); // Start progress bar
             }
-        });*/
+        });
 
         benchmarkRAMButton = createStyledButton("Benchmark RAM", buttonFont, buttonColor, buttonSize, textColor);
         benchmarkRAMButton.addActionListener(new ActionListener() {
@@ -317,10 +317,10 @@ public class GUI extends JFrame {
         step1PanelBenchmark.add(Box.createVerticalStrut(20)); // Add spacing
         step1PanelBenchmark.add(benchmarkCPUButton);
         step1PanelBenchmark.add(Box.createVerticalStrut(20)); // Add spacing
-        /*step1PanelBenchmark.add(benchmarkCPU2Button);
-        step1PanelBenchmark.add(Box.createVerticalStrut(20)); // Add spacing*/
+        step1PanelBenchmark.add(benchmarkCPU2Button);
+        step1PanelBenchmark.add(Box.createVerticalStrut(20)); // Add spacing
         step1PanelBenchmark.add(benchmarkRAMButton);
-        step1PanelBenchmark.add(Box.createVerticalStrut(380)); // Add spacing
+        step1PanelBenchmark.add(Box.createVerticalStrut(320)); // Add spacing
         step1PanelBenchmark.add(goBackStep1Button);
     }
     private void initializeStep2PanelBenchmark() {
@@ -556,7 +556,7 @@ public class GUI extends JFrame {
             @Override
             protected Void doInBackground() throws Exception {
                 //ProcessBuilder processBuilder = new ProcessBuilder("java", "-jar", "FileCompresserBenchmark.jar", "FileCompresserBenchmark", benchmarkCPU);
-                ProcessBuilder processBuilder = new ProcessBuilder("java", "-cp", "./out/production/FileCompresserBenchmark", "FileCompresserBenchmark", "-benchmark1");
+                ProcessBuilder processBuilder = new ProcessBuilder("java", "-cp", "./out/production/FileCompresserBenchmark", "FileCompresserBenchmark", benchmarkCPU);
                 processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
                 processCPUbenchmark = processBuilder.start();
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(processCPUbenchmark.getInputStream()))) {
