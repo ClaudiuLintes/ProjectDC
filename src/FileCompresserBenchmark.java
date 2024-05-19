@@ -38,11 +38,42 @@ class Results{
         this.multiThreadScore=multiThreadScore;
     }
 }
+
+class HuffmanNode implements Comparable<HuffmanNode>{
+    protected HuffmanNode leftNode,rightNode;
+    protected final int freq;
+
+    HuffmanNode(int freq , HuffmanNode leftNode, HuffmanNode rightNode){
+        this.freq=freq;
+        this.leftNode=leftNode;
+        this.rightNode=rightNode;
+    }
+
+    HuffmanNode(int freq){
+        this.freq=freq;
+    }
+
+    public int compareTo(HuffmanNode that){
+        return this.freq-that.freq;
+    }
+
+}
+
+class HuffmanLeafNode extends HuffmanNode{
+    protected int character;
+    HuffmanLeafNode(int character,int freq){
+        super(freq);
+        this.character=character;
+    }
+}
+
 public class FileCompresserBenchmark {
 
     private static final int mainAlphabetSize = 256; //alphabet size of extended ASCII
 
     private static final int numberOfRunsToFillCache = 5; //2-3 runs needed to fill the cache from what i've tested
+
+    private static final int huffmanCodeMaxLength = 4096; //How big can a outputCode string can get in huffmanEncoding [Default 4096]
 
     private static boolean runStress;
 
@@ -200,9 +231,140 @@ public class FileCompresserBenchmark {
         DataOutputWriter.close();
     }
 
+    private static void buildCodeTable(String[] st, HuffmanNode x, String s) {
+        if (!(x instanceof HuffmanLeafNode)) {
+            buildCodeTable(st, x.leftNode, s + '0');
+            buildCodeTable(st, x.rightNode, s + '1');
+        } else {
+            st[((HuffmanLeafNode) x).character] = s;
+        }
+    }
+
+    private static HuffmanNode buildHuffmanTree(int[] freq) { //We use the frequency array to build our huffman tree [~]
+        PriorityQueue<HuffmanNode> pq = new PriorityQueue<>();
+        int alphabetSize = mainAlphabetSize;
+        for (int c = 0; c < alphabetSize; c++) { //We try each character [Int 4 Bytes] and if it has a frequency bigger than 0 we add it to the tree
+            if (freq[c] > 0) {
+                pq.add(new HuffmanLeafNode(c, freq[c]));
+            }
+        }
+        while (pq.size() > 1) {
+            HuffmanNode leftNode = pq.remove();
+            HuffmanNode rightNode = pq.remove();
+            HuffmanNode parent = new HuffmanNode(leftNode.freq + rightNode.freq, leftNode, rightNode);
+            pq.add(parent);
+        }
+        return pq.remove();
+    }
+
+    private static int[] getFrequencyTable(String inputFile) throws IOException {
+        int alphabetSize = mainAlphabetSize;//we consider the full alphabet
+        DataInputStream DataInputReader=new DataInputStream(new BufferedInputStream(new FileInputStream(inputFile))); //we initialize the input
+        int[] freq = new int[alphabetSize]; //stores the frequencies
+        while (DataInputReader.available()>=1) { //we go through all the characters increasing the frequency array
+            byte intCharacterCode=DataInputReader.readByte();
+            freq[intCharacterCode]++;
+        }
+        DataInputReader.close();
+        return freq;
+    }
+
+    private static void encodeHuffman(String inputFile,String outputFile) throws IOException{ //File : 1 [int] alphabet size | 256+ [ints] frequency of characters | 1 [int] LastRightShift number | Bytes
+        int[] frequency=getFrequencyTable(inputFile);
+        DataOutputStream OutputByteWriter=new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
+        int alphabetSize = mainAlphabetSize;
+        OutputByteWriter.writeInt(alphabetSize);//We first write the size of the encoded alphabet
+        for(int i=0;i<alphabetSize;i++){
+            OutputByteWriter.writeInt(frequency[i]);//Write all frequencies int by int
+        }
+        HuffmanNode root = buildHuffmanTree(frequency);
+        String[] codesArray = new String[alphabetSize];
+        buildCodeTable(codesArray, root, "");
+        DataInputStream InputDataReader=new DataInputStream(new BufferedInputStream(new FileInputStream(inputFile)));
+        byte c;
+        int rightShiftDecodingNumber=0;
+        byte[] byteArray;
+        String currentCodes;
+        StringBuilder outputCode= new StringBuilder();
+        while(InputDataReader.available()>=1) {
+            c = InputDataReader.readByte();
+            String saveLast="";
+            outputCode.append(codesArray[c]); //we create the output code
+            if(outputCode.length()>=huffmanCodeMaxLength||InputDataReader.available()<1) {
+                if(outputCode.length()>=huffmanCodeMaxLength) {
+                    currentCodes = outputCode.substring(0, huffmanCodeMaxLength);
+                    saveLast=outputCode.substring(huffmanCodeMaxLength); //We save the last incomplete byte for each buffer of size >huffmanCodeMaxLength
+                }
+                else{
+                    currentCodes=outputCode.substring(0,outputCode.length());
+                }
+                byteArray = new byte[(currentCodes.length() + 7) / 8]; //we have 1 byte at least
+                rightShiftDecodingNumber = currentCodes.length() % 8;//The last byte will need to be right shifted by it when decoding
+                for (int i = 0; i < currentCodes.length(); i++) {
+                    if (outputCode.charAt(i) == '1') {
+                        int bitNumber = (i % 8);//the bit number can be between 0-7 (i%8)
+                        int byteNumber = i / 8; //the byte number is i/8 , i being the character position in output code
+                        int leftShiftNumber = 7 - bitNumber; //the number we have to left shift to put the bit on the correct position
+                        byteArray[byteNumber] |= (byte) (1 << leftShiftNumber); //We create the byte
+                    }
+                }
+                OutputByteWriter.write(byteArray);
+                outputCode.setLength(0);
+                outputCode.append(saveLast); //We the saved last incomplete byte append to the next one
+            }
+        }
+        InputDataReader.close();
+        OutputByteWriter.writeInt(rightShiftDecodingNumber); //We write as the last Int (4 Bytes) the number we need to right shift the last byte of content
+        OutputByteWriter.close();
+    }
+
+    private static void decodeHuffman(String inputFile,String outputFile) throws IOException{
+        DataInputStream InputDataReader=new DataInputStream(new BufferedInputStream(new FileInputStream(inputFile)));
+        DataOutputStream OutputDataWriter=new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputFile)));
+        int alphabetSize=InputDataReader.readInt(); //We read the alphabet size
+        int[] frequency=new int[alphabetSize];
+        for(int i=0;i<alphabetSize;i++){
+            frequency[i]=InputDataReader.readInt();//We read the frequency for all the characters
+        }
+        int rightShiftDecodingNumber;
+        HuffmanNode root=buildHuffmanTree(frequency);
+        int currentByteCode;
+        int lastShift=8; //Becomes the right shift amount for last byte
+        HuffmanNode currentNode=root;
+        while(InputDataReader.available()>=5){
+            currentByteCode=InputDataReader.read();
+            if(InputDataReader.available()==4){
+                rightShiftDecodingNumber=InputDataReader.readInt();//We read the number that we right shift by the last byte
+                if(rightShiftDecodingNumber!=0) {
+                    lastShift = rightShiftDecodingNumber; //We "Right Shift" (remove) the last bits from the last byte
+                }
+            }
+            for(int i=7;i>=8-lastShift;i--){
+                int currentBit=(currentByteCode>>i)&1;
+                if(currentBit==0){
+                    currentNode=currentNode.leftNode;
+                }
+                else{
+                    currentNode=currentNode.rightNode;
+                }
+                if(currentNode instanceof HuffmanLeafNode){
+                    OutputDataWriter.writeByte(((HuffmanLeafNode) currentNode).character);
+                    currentNode=root;
+                }
+            }
+        }
+        InputDataReader.close();
+        OutputDataWriter.close();
+    }
+
     private static void compress(String inputFile,String outputFile){
         try{
-            encodeLZW(inputFile,outputFile);
+            if(runBenchmark1){
+                encodeLZW(inputFile,outputFile);
+            }
+            else if(runBenchmark2) {
+                encodeHuffman(inputFile, outputFile);
+            }
         }
         catch(IOException e){
             System.out.println(e);
@@ -211,7 +373,12 @@ public class FileCompresserBenchmark {
 
     private static void decompress(String inputFile,String outputFile){
         try{
-            decodeLZW(inputFile,outputFile);
+            if(runBenchmark1){
+                decodeLZW(inputFile,outputFile);
+            }
+            else if(runBenchmark2) {
+                decodeHuffman(inputFile, outputFile);
+            }
         }
         catch(IOException e){
             System.out.println(e);
@@ -278,8 +445,15 @@ public class FileCompresserBenchmark {
 
     private static void addToDatabase(String databaseFileName,Specs specs,int numberOfRuns,long singleScore,long multiScore)throws IOException{
         FileWriter fileWriter=new FileWriter(databaseFileName,true);
+        String testType="Failed";
+        if(runBenchmark1){
+            testType="LZW";
+        }
+        if(runBenchmark2){
+            testType="Huffman";
+        }
         BufferedWriter databaseOutput=new BufferedWriter(fileWriter);
-        databaseOutput.write(getSpecs(specs)+","+numberOfRuns+","+singleScore+","+multiScore+","+getCurrentDate());
+        databaseOutput.write(getSpecs(specs)+","+numberOfRuns+","+singleScore+","+multiScore+","+getCurrentDate()+","+testType);
         databaseOutput.newLine();
         databaseOutput.close();
     }
