@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class RAMStressTest implements Runnable {
     private final long totalDuration;
@@ -13,7 +14,13 @@ public class RAMStressTest implements Runnable {
 
     public static void main(String[] args) {
         // Retrieve RAM information
+        String ramSize = getRAMSize();
+        String os = System.getProperty("os.name").toLowerCase();
+        String ramSpeed = getRAMSpeed(os);
 
+        System.out.println("RAM Size: " + ramSize);
+
+        System.out.println("RAM Speed: " + ramSpeed);
 
         // Stress test: Allocate memory and perform operations
         long testDuration = 60000; // 60 seconds
@@ -28,80 +35,67 @@ public class RAMStressTest implements Runnable {
         }
     }
 
-    public static String getRAMInfo() {
+    public static String getRAMSize() {
         String os = System.getProperty("os.name").toLowerCase();
         if (os.contains("win")) {
-            return getRAMInfoWindows();
+            return getRAMSizeWindows();
         } else if (os.contains("mac")) {
-            return getRAMInfoMac();
-        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-            return getRAMInfoLinux();
+            return getRAMSizeMac();
         } else {
             return "Unsupported OS";
         }
     }
-    private static String getRAMInfoWindows() {
+
+    private static String getRAMSizeWindows() {
         try {
-            Process process = Runtime.getRuntime().exec("wmic memorychip get capacity");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            long totalRAM = 0;
-            while ((line = reader.readLine()) != null) {
-                if (line.matches("\\d+")) {
-                    totalRAM += Long.parseLong(line.trim());
-                }
+            ProcessBuilder builder = new ProcessBuilder("wmic", "memorychip", "get", "capacity");
+            builder.redirectErrorStream(true);
+
+            Process process = builder.start();
+
+            // Read the output of the process
+            String output = new String(process.getInputStream().readAllBytes());
+            String[] lines = output.split(System.lineSeparator());
+
+            if (lines.length >= 2) {
+                String capacityLine = lines[1];
+                long capacityBytes = Long.parseLong(capacityLine.trim());
+
+                // Bytes to gigabytes
+                long capacityGB = capacityBytes / (1024 * 1024 * 1024);
+
+                return "Memory Capacity: " + capacityGB + " GB";
+            } else {
+                return "Failed to retrieve memory capacity.";
             }
-            reader.close();
-            long memSizeGB = totalRAM / (1024 * 1024 * 1024);
-            return memSizeGB + " GB";
         } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
-            return "Failed to retrieve RAM information";
+            return "Error: " + e.getMessage();
         }
     }
 
-    private static String getRAMInfoMac() {
+    private static String getRAMSizeMac() {
         try {
+            // Read the output of the process
             Process process = Runtime.getRuntime().exec("sysctl -n hw.memsize");
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
             long memSizeBytes = Long.parseLong(reader.readLine());
             reader.close();
+            // Bytes to gigabytes
             long memSizeGB = memSizeBytes / (1024 * 1024 * 1024);
             return memSizeGB + " GB";
         } catch (IOException | NumberFormatException e) {
             e.printStackTrace();
-            return "Failed to retrieve RAM information";
+            return "Failed to retrieve RAM size";
         }
     }
 
-    private static String getRAMInfoLinux() {
-        try {
-            Process process = Runtime.getRuntime().exec("free -m");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            long totalRAM = 0;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("Mem:")) {
-                    String[] parts = line.split("\\s+");
-                    totalRAM = Long.parseLong(parts[1]);
-                }
-            }
-            reader.close();
-            long memSizeGB = totalRAM / 1024;
-            return memSizeGB + " GB";
-        } catch (IOException | NumberFormatException e) {
-            e.printStackTrace();
-            return "Failed to retrieve RAM information";
-        }
-    }
-
-    public static String getRAMType(String os) {
+    public static String getRAMSpeed(String os) {
         if (os.contains("win")) {
-            return getRAMTypeWindows();
+            return getMemorySpeedWindows();
         } else if (os.contains("mac")) {
             return getRAMTypeMac();
-        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-            return getRAMTypeLinux();
         } else {
             return "Unsupported OS";
         }
@@ -112,6 +106,7 @@ public class RAMStressTest implements Runnable {
         try {
             Process process = Runtime.getRuntime().exec("system_profiler SPMemoryDataType");
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.trim().startsWith("Type:")) {
@@ -126,64 +121,24 @@ public class RAMStressTest implements Runnable {
         return result.toString();
     }
 
-    public static String getRAMTypeWindows() {
+    public static String getMemorySpeedWindows() {
         StringBuilder result = new StringBuilder();
         try {
-            Process process = Runtime.getRuntime().exec("wmic memorychip get MemoryType");
+            Process process = Runtime.getRuntime().exec("wmic MEMORYCHIP get Speed");
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.matches("\\d+")) {
-                    int type = Integer.parseInt(line.trim());
-                    String typeName = getMemoryTypeName(type);
-                    result.append(typeName).append("\n");
+                // ignore empty lines and headers
+                if (!line.trim().isEmpty() && !line.contains("Speed")) {
+                    // Trim any spaces
+                    result.append(line.trim()).append("MHz\n");
                 }
             }
             reader.close();
         } catch (IOException e) {
             e.printStackTrace();
-            return "Failed to retrieve RAM type information";
-        }
-        return result.toString();
-    }
-
-    private static String getMemoryTypeName(int type) {
-        switch (type) {
-            case 20:
-                return "DDR";
-            case 21:
-                return "DDR2";
-            case 22:
-                return "DDR2 FB-DIMM";
-            case 24:
-                return "DDR3";
-            case 26:
-                return "DDR4";
-            case 27:
-                return "DDR4";
-            default:
-                return "Unknown";
-        }
-    }
-
-    public static String getRAMTypeLinux() {
-        StringBuilder result = new StringBuilder();
-        try {
-            Process process = Runtime.getRuntime().exec("sudo dmidecode --type memory");
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.trim().startsWith("Type:")) {
-                    String type = line.split(":")[1].trim();
-                    if (!type.equals("Unknown") && !type.equals("RAM")) {
-                        result.append(type).append("\n");
-                    }
-                }
-            }
-            reader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return "Failed to retrieve RAM type information";
+            return "Failed to retrieve memory speed information";
         }
         return result.toString();
     }
@@ -195,15 +150,6 @@ public class RAMStressTest implements Runnable {
         long startTime = System.currentTimeMillis();
         int totalAlgorithmIterations = 0;
         double lastPrintedProgress = -1.0;
-
-
-        String ramInfo = getRAMInfo();
-        String os = System.getProperty("os.name").toLowerCase();
-        String ramType = getRAMType(os);
-
-        System.out.println("RAM Info: " + ramInfo);
-        System.out.println("RAM Type: " + ramType);
-
 
         while (System.currentTimeMillis() - startTime < totalDuration) {
             System.out.println("Iteration " + (totalAlgorithmIterations + 1) + ":");
@@ -219,7 +165,7 @@ public class RAMStressTest implements Runnable {
         System.out.println("Total algorithm iterations: " + totalAlgorithmIterations);
         System.out.println("RAM stress test completed.");
 
-        double score = calculateScore(totalAlgorithmIterations);
+        int score = calculateScore(totalAlgorithmIterations, System.currentTimeMillis() - startTime);
         System.out.println("Score: " + score);
     }
 
@@ -230,7 +176,6 @@ public class RAMStressTest implements Runnable {
         boolean memoryAllocationPhase = true;
 
         List<Object[]> memoryList = new ArrayList<>();
-        int operationsCount = 0;
         int algorithmIterations = 0;
 
         try {
@@ -243,7 +188,6 @@ public class RAMStressTest implements Runnable {
                         Object[] objects = new Object[1024];
                         memoryList.add(objects);
                         allocatedMemoryPhase += getObjectSize(objects);
-                        operationsCount++;
 
                         long elapsedTime = System.currentTimeMillis() - globalStartTime;
                         timerElapsed = elapsedTime >= totalDuration;
@@ -352,11 +296,7 @@ public class RAMStressTest implements Runnable {
         java.util.Arrays.sort(array);
     }
 
-    public static double calculateScore(long elapsedTime) {
-        long baselineTime = 1_000_000_000; // 1 second in nanoseconds
-        double score = (double) baselineTime / elapsedTime;
-        score = score * Math.pow(10, 4);
-        score = Math.round(score);
-        return score;
+    public static int calculateScore(int totalAlgorithmIterations, long timeToFillMemoryMillis) {
+        return (int)((totalAlgorithmIterations * timeToFillMemoryMillis) / 1000.0);
     }
 }
