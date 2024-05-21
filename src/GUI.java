@@ -8,6 +8,7 @@ import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutionException;
 
 public class GUI extends JFrame {
     private JButton stressTestButton;
@@ -23,6 +24,7 @@ public class GUI extends JFrame {
     private JButton goBackMainMenuButton;
     private JButton saveSettingsButton;
     private JButton openCPUDatabaseButton;
+    private JButton openRAMDatabaseButton;
     private JButton stressYourselfButton;
     private JPanel mainMenuPanel;
     private JPanel step1PanelStress;
@@ -42,11 +44,12 @@ public class GUI extends JFrame {
 
     private ArrayList<JComponent> valueComponents = new ArrayList<>();
     private Process processCPUbenchmark;
+    private Process processRAMbenchmark;
 
     private String SingleThreadScore;
-
     private String MultiThreadScore;
-    private Process processRAMbenchmark;
+    private String ramScore;
+
 
     public GUI() {
         setPreferredSize(new Dimension(800, 600));
@@ -104,6 +107,7 @@ public class GUI extends JFrame {
         benchmarkButton = createStyledButton("Benchmark", buttonFont, buttonColor, buttonSize, textColor);
         settingsButton = createStyledButton("Settings", buttonFont, buttonColor, buttonSize, textColor);
         openCPUDatabaseButton = createStyledButton("CPUdatabase",buttonFont,buttonColor,buttonSize,textColor);
+        openRAMDatabaseButton = createStyledButton("RAMdatabase",buttonFont,buttonColor,buttonSize,textColor);
         aboutButton = createStyledButton("About", buttonFont, buttonColor, buttonSize, textColor);
 
         stressTestButton.addActionListener(new ActionListener() {
@@ -134,6 +138,13 @@ public class GUI extends JFrame {
             }
         });
 
+        openRAMDatabaseButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openRAMDatabase();
+            }
+        });
+
         aboutButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -149,6 +160,8 @@ public class GUI extends JFrame {
         mainMenuPanel.add(settingsButton);
         mainMenuPanel.add(Box.createVerticalStrut(10)); // Add spacing
         mainMenuPanel.add(openCPUDatabaseButton);
+        mainMenuPanel.add(Box.createVerticalStrut(10)); // Add spacing
+        mainMenuPanel.add(openRAMDatabaseButton);
         mainMenuPanel.add(Box.createVerticalStrut(10)); // Add spacing
         mainMenuPanel.add(aboutButton);
 
@@ -299,7 +312,7 @@ public class GUI extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 showStepBenchmark2();
                 try {
-                    startRAMStressTest(); // Call method to start RAM benchmark instead of stress test
+                    startRAMBenchmarkTest(); // Call method to start RAM benchmark instead of stress test
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -519,6 +532,14 @@ public class GUI extends JFrame {
         }
     }
 
+    private void openRAMDatabase() {
+        try {
+            Desktop.getDesktop().open(new File("databaseRAM.csv"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void startTimer() {
         timerLabel.setText("00:00"); // Set the timer text to 0 to display the correct time during the first second
         elapsedTime = 0;
@@ -604,14 +625,92 @@ public class GUI extends JFrame {
         processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         processCPUstress = processBuilder.start();
     }
+
     private void startRAMStressTest() throws IOException {
-        SwingWorker<Void,Integer> worker= new SwingWorker<Void, Integer>() {
+        // Start as a process so it can be easily stop
+        //ProcessBuilder processBuilder = new ProcessBuilder("java", "-jar", "FileCompresserBenchmark.jar", "FileCompresserBenchmark", "-stress");
+        ProcessBuilder processBuilder = new ProcessBuilder("java", "-cp", "./out/production/FileCompresserBenchmark", "RAMStressTest", "-stress");
+        processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+        processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        processCPUstress = processBuilder.start();
+    }
+
+    private void startRAMBenchmarkTest() throws IOException {
+        SwingWorker<Void, Integer> worker = new SwingWorker<>() {
+            @Override
             protected Void doInBackground() throws Exception {
-                RAMStressTest stressTest = new RAMStressTest(60000); // Create an instance of RAMStressTest
-                stressTest.run(); // Call the method to start the RAM stress test
+                ProcessBuilder processBuilder = new ProcessBuilder("java", "-cp", "./out/production/FileCompresserBenchmark", "RAMStressTest");
+                processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+                Process processRAMbenchmark = processBuilder.start();
+                System.out.println("Started process");
+
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(processRAMbenchmark.getInputStream()))) {
+                    String line;
+                    String lastLine = " ";
+                    while ((line = reader.readLine()) != null) {
+                        try {
+                            lastLine = line;
+                            int progress = Integer.parseInt(line.trim());
+                            publish(progress);
+                        } catch (NumberFormatException e) {
+                            // Ignore lines that are not numbers
+                        }
+                    }
+                    String[] results = lastLine.split(" ");
+                    if (results.length == 2) {
+                        ramScore = results[1];
+                    } else {
+                        throw new IOException("Invalid output format from the RAM stress test");
+                    }
+                }
+
+                processRAMbenchmark.waitFor();
                 return null;
             }
+
+            @Override
+            protected void process(java.util.List<Integer> chunks) {
+                // Process chunks to update the UI with progress if needed
+                for (int progress : chunks) {
+                    progressBar.setValue(progress);
+                }
+            }
+
+            @Override
+            protected void done() {
+                progressBar.setValue(100);
+                initializeResultsPanelRam();
+                showResults();
+            }
         };
+
+        worker.execute();
+    }
+
+    private void initializeResultsPanelRam(){
+        resultsPanel = new JPanel();
+        resultsPanel.setOpaque(false);
+        resultsPanel.setLayout(new BoxLayout(resultsPanel, BoxLayout.Y_AXIS));
+
+        Font buttonFont = new Font("Arial", Font.BOLD, 25);
+        Color buttonColor = new Color(50, 50, 50); // Gray
+        Color textColor = new Color(255, 255, 255);
+        Dimension buttonSize = new Dimension(200, 50);
+
+        goBackMainMenuButton = createStyledButton("Go Back", buttonFont, buttonColor, buttonSize, textColor);
+        goBackMainMenuButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showMainMenu();
+            }
+        });
+
+        JLabel ramScoreLabel=new JLabel("Score: "+ramScore);
+        StyledComponent(ramScoreLabel,buttonFont,textColor,buttonColor);
+
+        resultsPanel.add(ramScoreLabel);
+        resultsPanel.add(Box.createVerticalStrut(20)); // Add spacing
+        resultsPanel.add(goBackMainMenuButton);
     }
 
     private void stopAllProcesses() {

@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -8,31 +9,46 @@ import java.util.concurrent.TimeUnit;
 public class RAMStressTest implements Runnable {
     private final long totalDuration;
 
+    private static boolean benchmark;
+
     public RAMStressTest(long totalDuration) {
         this.totalDuration = totalDuration;
     }
 
     public static void main(String[] args) {
-        // Retrieve RAM information
-        String ramSize = getRAMSize();
-        String os = System.getProperty("os.name").toLowerCase();
-        String ramSpeed = getRAMSpeed(os);
-
-        System.out.println("RAM Size: " + ramSize);
-
-        System.out.println("RAM Speed: " + ramSpeed);
-
-        // Stress test: Allocate memory and perform operations
-        long testDuration = 60000; // 60 seconds
-        RAMStressTest stressTest = new RAMStressTest(testDuration);
-        Thread stressTestThread = new Thread(stressTest);
-        stressTestThread.start();
-
-        try {
-            stressTestThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (args.length > 0 && args[0].equals("-stress"))
+        {
+            long testDuration = 60000000; // 600000 seconds
+            RAMStressTest stressTest = new RAMStressTest(testDuration);
+            Thread stressTestThread = new Thread(stressTest);
+            stressTestThread.start();
+            benchmark = false;
         }
+        else
+        {
+            benchmark = true;
+            // Retrieve RAM information
+            String ramSize = getRAMSize();
+            String os = System.getProperty("os.name").toLowerCase();
+            String ramSpeed = getRAMSpeed(os);
+
+            //System.out.println("RAM Size: " + ramSize);
+
+            //System.out.println("RAM Speed: " + ramSpeed);
+
+            // Stress test: Allocate memory and perform operations
+            long testDuration = 60000; // 60 seconds
+            RAMStressTest stressTest = new RAMStressTest(testDuration);
+            Thread stressTestThread = new Thread(stressTest);
+            stressTestThread.start();
+
+            try {
+                stressTestThread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     public static String getRAMSize() {
@@ -132,7 +148,7 @@ public class RAMStressTest implements Runnable {
                 // ignore empty lines and headers
                 if (!line.trim().isEmpty() && !line.contains("Speed")) {
                     // Trim any spaces
-                    result.append(line.trim()).append("MHz\n");
+                    result.append(line.trim()).append("MHz  ");
                 }
             }
             reader.close();
@@ -145,28 +161,43 @@ public class RAMStressTest implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Starting RAM stress test...");
+        //System.out.println("Starting RAM stress test...");
 
         long startTime = System.currentTimeMillis();
         int totalAlgorithmIterations = 0;
         double lastPrintedProgress = -1.0;
 
         while (System.currentTimeMillis() - startTime < totalDuration) {
-            System.out.println("Iteration " + (totalAlgorithmIterations + 1) + ":");
+            //System.out.println("Iteration " + (totalAlgorithmIterations + 1) + ":");
 
             totalAlgorithmIterations += performRAMStressTest(startTime, totalDuration, lastPrintedProgress);
 
             if (System.currentTimeMillis() - startTime >= totalDuration) {
-                System.out.println("RAM stress test reached 100%. Stopping...");
+                //System.out.println("RAM stress test reached 100%. Stopping...");
                 break;
             }
         }
 
-        System.out.println("Total algorithm iterations: " + totalAlgorithmIterations);
-        System.out.println("RAM stress test completed.");
+        //System.out.println("Total algorithm iterations: " + totalAlgorithmIterations);
+        //System.out.println("RAM stress test completed.");
 
         int score = calculateScore(totalAlgorithmIterations, System.currentTimeMillis() - startTime);
         System.out.println("Score: " + score);
+
+        if(benchmark == true) {
+            String ramSize = getRAMSize();
+            String os = System.getProperty("os.name").toLowerCase();
+            String ramSpeed = getRAMSpeed(os);
+
+            try {
+                FileWriter myWriter = new FileWriter("databaseRAM.csv", true);
+                myWriter.write(ramSize + ", RAM speed: " + ramSpeed + ", " + "score: " + score + "\n");
+                myWriter.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
     }
 
     private int performRAMStressTest(long globalStartTime, long totalDuration, double lastPrintedProgress) {
@@ -194,12 +225,12 @@ public class RAMStressTest implements Runnable {
 
                         double progress = (double) elapsedTime / totalDuration * 100;
                         if (progress > lastPrintedProgress + 1.0) {
-                            System.out.printf("%.2f%% time elapsed\n", progress);
+                            System.out.println((int)progress);
                             lastPrintedProgress = progress;
                         }
 
                         if (allocatedMemoryPhase >= maxMemory * 0.95) {
-                            System.out.println("Warning: Approaching maximum heap memory limit. Stopping memory allocation.");
+                            //System.out.println("Warning: Approaching maximum heap memory limit. Stopping memory allocation.");
                             memoryAllocationPhase = false;
                             break;
                         }
@@ -207,7 +238,7 @@ public class RAMStressTest implements Runnable {
 
                     if (allocatedMemoryPhase >= maxMemory * 0.95) {
                         memoryAllocationPhase = false;
-                        System.out.println("Memory allocation phase completed.");
+                        //System.out.println("Memory allocation phase completed.");
                     }
                 } else {
                     long algorithmsStartTime = System.nanoTime();
@@ -229,18 +260,18 @@ public class RAMStressTest implements Runnable {
                             break;
                         }
                         if (progress > lastPrintedProgress + 1.0) {
-                            System.out.printf("%.2f%% time elapsed\n", progress);
+                            System.out.println((int)progress);
                             lastPrintedProgress = progress;
                         }
 
                         if (Runtime.getRuntime().totalMemory() >= maxMemory * 0.95) {
-                            System.out.println("Memory limit reached. Restarting memory allocation phase.");
+                            //System.out.println("Memory limit reached. Restarting memory allocation phase.");
                             memoryList.clear();
                             memoryAllocationPhase = true;
                             break;
                         }
                     }
-                    System.out.println("Memory-intensive algorithms completed.");
+                    //System.out.println("Memory-intensive algorithms completed.");
                 }
             }
         } catch (OutOfMemoryError e) {
