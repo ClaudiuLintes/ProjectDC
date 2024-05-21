@@ -46,7 +46,7 @@ public class GUI extends JFrame {
     private String SingleThreadScore;
 
     private String MultiThreadScore;
-
+    private Process processRAMbenchmark;
 
     public GUI() {
         setPreferredSize(new Dimension(800, 600));
@@ -276,6 +276,7 @@ public class GUI extends JFrame {
                 }
                 startProgressBar(); // Start progress bar
             }
+
         });
 
         benchmarkCPU2Button = createStyledButton("Benchmark CPU 2", buttonFont, buttonColor, buttonSize, textColor);
@@ -298,9 +299,9 @@ public class GUI extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 showStepBenchmark2();
                 try {
-                    startRAMStressTest(); // Call method to start RAM stress test
+                    startRAMStressTest(); // Call method to start RAM benchmark instead of stress test
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    throw new RuntimeException(ex);
                 }
                 startProgressBar(); // Start progress bar
             }
@@ -604,8 +605,13 @@ public class GUI extends JFrame {
         processCPUstress = processBuilder.start();
     }
     private void startRAMStressTest() throws IOException {
-        RAMStressTest stressTest = new RAMStressTest(60000); // Create an instance of RAMStressTest
-        stressTest.run(); // Call the method to start the RAM stress test
+        SwingWorker<Void,Integer> worker= new SwingWorker<Void, Integer>() {
+            protected Void doInBackground() throws Exception {
+                RAMStressTest stressTest = new RAMStressTest(60000); // Create an instance of RAMStressTest
+                stressTest.run(); // Call the method to start the RAM stress test
+                return null;
+            }
+        };
     }
 
     private void stopAllProcesses() {
