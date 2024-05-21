@@ -1,0 +1,32 @@
+sep=,
+Operating System,CPU Manufacturer,CPU Model,Number Of Threads,Number of runs,Single-Thread Score,Multi-Thread Score,Date,Algorithm
+Windows 11,AMD,Ryzen 5 7600 6-Core Processor,12,5,15339,174193,17/05/2024,LZW
+Windows 11,AMD,Ryzen 7 5800H with Radeon Graphics,16,5,9410,144145,17/05/2024,LZW
+Linux,AMD,Ryzen 7 5800H with Radeon Graphics,16,5,41152,583840,19/05/2024,LZW
+Windows 11,AMD,Ryzen 7 2700X Eight-Core Processor,16,20,5084,59125,03/05/2024,LZW
+Windows 10,Intel(R),Core(TM) i3-3217U CPU @ 1.80GHz,4,10,3892,14932,11/05/2024,LZW
+Windows 11,AMD,Ryzen 3 7320U with Radeon Graphics,8,5,14811,104973,17/05/2024,LZW
+Windows 11,Intel(R),Core(TM) i5-11300H @ 3.10GHz,8,5,9709,64801,19/05/2024,LZW
+Windows 10,Intel(R),Core(TM) i5-7300HQ CPU @ 2.50GHz,4,5,8076,31374,19/05/2024,LZW
+Proton,Intel(R),Core(TM) i5-7300HQ CPU @ 2.50GHz,4,5,784,3096,19/05/2024,LZW
+Linux,Intel(R),Core(TM) i5-7300HQ CPU @ 2.50GHz,4,5,24974,97248,20/05/2024,LZW
+Windows 10,AMD,Ryzen 5 5600X 6-Core Processor,12,5,12144,140143,19/05/2024,LZW
+Windows 10,AMD,Custom APU 0405,8,5,11457,79851,20/05/2024,LZW
+Proton,AMD,Custom APU 0405,8,5,9701,70703,19/05/2024,LZW
+Linux,AMD,Custom APU 0405,8,5,48681,333599,21/05/2024,LZW
+Windows 11,AMD,Ryzen 5 7600 6-Core Processor,12,5,5026,58648,19/05/2024,Huffman
+Windows 10,AMD,Custom APU 0405,8,5,4225,31595,20/05/2024,Huffman
+Proton,AMD,Custom APU 0405,8,5,3178,24683,20/05/2024,Huffman
+Linux,AMD,Custom APU 0405,8,5,21224,140796,20/05/2024,Huffman
+Linux,Intel(R),Core(TM) i5-7300HQ CPU @ 2.50GHz,4,5,8483,33728,20/05/2024,Huffman
+Windows 10,AMD,Ryzen 5 5600X 6-Core Processor,12,5,3980,46640,20/05/2024,Huffman
+Windows 10,Intel(R),Core(TM) i5-7300HQ CPU @ 2.50GHz,4,5,2894,11224,21/05/2024,Huffman
+,,,,,,,,
+Operating System,RAM Size (in GB),RAM Speed (in MHz),Total algorithm iterations,Score,,,,
+Windows 10,16,2400/2667,498,29972,,,,
+Windows 10,16,3200,999,60097,,,,
+Linux,16,2400/2667,510,30611,,,,
+Proton,16,2400/2667,492,29692,,,,
+Linux,16,2750,684,41160,,,,
+Proton,16,2750,672,40463,,,,
+Windows 10,16,2750,639,38472,,,,
