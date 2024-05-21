@@ -1,4 +1,3 @@
-sep=,
 Operating System,CPU Manufacturer,CPU Model,Number Of Threads,Number of runs,Single-Thread Score,Multi-Thread Score,Date,Algorithm
 Windows 11,AMD,Ryzen 5 7600 6-Core Processor,12,5,15339,174193,17/05/2024,LZW
 Windows 11,AMD,Ryzen 7 5800H with Radeon Graphics,16,5,9410,144145,17/05/2024,LZW
