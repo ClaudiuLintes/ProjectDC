@@ -74,9 +74,13 @@ public class RAMStressTest implements Runnable {
             String[] lines = output.split(System.lineSeparator());
 
             if (lines.length >= 2) {
-                String capacityLine = lines[1];
-                long capacityBytes = Long.parseLong(capacityLine.trim());
+                long capacityBytes=0;
+                for(int i=1;i< lines.length-1;i++) {
+                    String capacityLine = lines[i];
 
+                     capacityBytes += Long.parseLong(capacityLine.trim());
+
+                }
                 // Bytes to gigabytes
                 long capacityGB = capacityBytes / (1024 * 1024 * 1024);
 
@@ -143,12 +147,13 @@ public class RAMStressTest implements Runnable {
             Process process = Runtime.getRuntime().exec("wmic MEMORYCHIP get Speed");
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-            String line;
+            String line=reader.readLine();
             while ((line = reader.readLine()) != null) {
                 // ignore empty lines and headers
                 if (!line.trim().isEmpty() && !line.contains("Speed")) {
                     // Trim any spaces
                     result.append(line.trim()).append("MHz  ");
+                    break;
                 }
             }
             reader.close();
