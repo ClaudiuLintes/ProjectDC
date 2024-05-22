@@ -771,6 +771,7 @@ public class GUI extends JFrame {
     private void showStepBenchmark2(){
         remove(mainMenuPanel);
         remove(step1PanelBenchmark);
+        remove(resultsPanel);
         add(step2PanelBenchmark, BorderLayout.WEST);
         revalidate();
         repaint();
