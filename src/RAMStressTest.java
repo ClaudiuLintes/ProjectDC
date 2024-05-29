@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class RAMStressTest implements Runnable {
     private final long totalDuration;
@@ -20,8 +19,6 @@ public class RAMStressTest implements Runnable {
         {
             long testDuration = 60000000; // 600000 seconds
             RAMStressTest stressTest = new RAMStressTest(testDuration);
-            Thread stressTestThread = new Thread(stressTest);
-            stressTestThread.start();
             benchmark = false;
         }
         else
@@ -186,7 +183,7 @@ public class RAMStressTest implements Runnable {
         //System.out.println("Total algorithm iterations: " + totalAlgorithmIterations);
         //System.out.println("RAM stress test completed.");
 
-        int score = calculateScore(totalAlgorithmIterations, System.currentTimeMillis() - startTime);
+        int score = calculateScore(totalAlgorithmIterations);
         System.out.println("Score: " + score);
 
         if(benchmark == true) {
@@ -332,7 +329,7 @@ public class RAMStressTest implements Runnable {
         java.util.Arrays.sort(array);
     }
 
-    public static int calculateScore(int totalAlgorithmIterations, long timeToFillMemoryMillis) {
-        return (int)((totalAlgorithmIterations * timeToFillMemoryMillis) / 1000.0);
+    public static int calculateScore(int totalAlgorithmIterations) {
+        return totalAlgorithmIterations;
     }
 }
